@@ -1,0 +1,104 @@
+--!strict
+-- EXECUTOR-COMPATIBLE LIVE TELEPORT PANEL
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+
+-- Fallback check to ensure player environment is ready
+if not LocalPlayer then
+    return
+end
+
+-- Dedicated local memory cache for coordinates
+local MarkedPosition = nil
+
+-- Clean up any old panels left over from running the script multiple times
+local oldUi = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("ExecutorTeleportPanel")
+if oldUi then oldUi:Destroy() end
+
+-- 1. Construct the Visual Dashboard
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ExecutorTeleportPanel"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local Frame = Instance.new("Frame")
+Frame.Name = "MainFrame"
+Frame.Size = UDim2.new(0, 220, 0, 110)
+Frame.Position = UDim2.new(0.02, 0, 0.4, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(20, 21, 28)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true -- Allows you to drag the menu around your screen
+
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 8)
+Corner.Parent = Frame
+
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Color3.fromRGB(45, 48, 65)
+Stroke.Thickness = 1.5
+Stroke.Parent = Frame
+
+local Layout = Instance.new("UIListLayout")
+Layout.Padding = UDim.new(0, 8)
+Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+Layout.VerticalAlignment = Enum.VerticalAlignment.Center
+Layout.Parent = Frame
+
+-- Helper function to generate standardized panel buttons
+local function createButton(name: string, text: string, color: Color3): TextButton
+	local btn = Instance.new("TextButton")
+	btn.Name = name
+	btn.Size = UDim2.new(0, 190, 0, 36)
+	btn.BackgroundColor3 = color
+	btn.Text = text
+	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 13
+	btn.BorderSizePixel = 0
+	btn.AutoButtonColor = true
+	
+	local bCorner = Instance.new("UICorner")
+	bCorner.CornerRadius = UDim.new(0, 6)
+	bCorner.Parent = btn
+	return btn
+end
+
+local MarkBtn = createButton("MarkBtn", "📍 MARK CURRENT SPOT", Color3.fromRGB(43, 108, 176))
+local TeleportBtn = createButton("TeleportBtn", "⚡ TELEPORT TO MARK", Color3.fromRGB(39, 121, 88))
+
+MarkBtn.Parent = Frame
+TeleportBtn.Parent = Frame
+Frame.Parent = ScreenGui
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+-- 2. Direct Executor Input Connections (No RemoteEvents Needed)
+MarkBtn.MouseButton1Click:Connect(function()
+	local character = LocalPlayer.Character
+	local rootPart = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	
+	if rootPart then
+		MarkedPosition = rootPart.Position
+		MarkBtn.Text = "✨ MARK RECORDED ✨"
+		task.delay(1, function() 
+			MarkBtn.Text = "📍 MARK CURRENT SPOT" 
+		end)
+	end
+end)
+
+TeleportBtn.MouseButton1Click:Connect(function()
+	local character = LocalPlayer.Character
+	local rootPart = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	
+	if rootPart and MarkedPosition then
+		-- Instantly sets your character's coordinates to the marked spot
+		rootPart.CFrame = CFrame.new(MarkedPosition + Vector3.new(0, 0.5, 0))
+	elseif not MarkedPosition then
+		TeleportBtn.Text = "❌ NO MARK SAVED ❌"
+		task.delay(1.5, function() 
+			TeleportBtn.Text = "⚡ TELEPORT TO MARK" 
+		end)
+	end
+end)
