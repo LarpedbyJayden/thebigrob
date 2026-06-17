@@ -1,23 +1,26 @@
 --!strict
 -- EXECUTOR-COMPATIBLE LIVE TELEPORT PANEL
+-- UPDATE YOUR GITHUB FILE WITH THIS ENTIRE SCRIPT BLOCK
 
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 
--- Fallback check to ensure player environment is ready
+-- Yield setup to ensure your local player data is completely ready
 if not LocalPlayer then
-    return
+    LocalPlayer = Players:GetPropertyChangedSignal("LocalPlayer"):Wait() or Players.LocalPlayer
 end
 
--- Dedicated local memory cache for coordinates
-local MarkedPosition = nil
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui", 10) :: PlayerGui
+if not PlayerGui then return end
 
--- Clean up any old panels left over from running the script multiple times
-local oldUi = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("ExecutorTeleportPanel")
+-- Active session memory coordinate storage
+local MarkedPosition: Vector3? = nil
+
+-- Clean up residual interface layers from previous execution runs
+local oldUi = PlayerGui:FindFirstChild("ExecutorTeleportPanel")
 if oldUi then oldUi:Destroy() end
 
--- 1. Construct the Visual Dashboard
+-- 1. Programmatic Visual Dashboard Construction
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ExecutorTeleportPanel"
 ScreenGui.ResetOnSpawn = false
@@ -26,18 +29,18 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 local Frame = Instance.new("Frame")
 Frame.Name = "MainFrame"
 Frame.Size = UDim2.new(0, 220, 0, 110)
-Frame.Position = UDim2.new(0.02, 0, 0.4, 0)
+Frame.Position = UDim2.new(0.05, 0, 0.35, 0) -- Positioned cleanly for mobile/desktop overlays
 Frame.BackgroundColor3 = Color3.fromRGB(20, 21, 28)
 Frame.BorderSizePixel = 0
 Frame.Active = true
-Frame.Draggable = true -- Allows you to drag the menu around your screen
+Frame.Draggable = true -- Hold and slide anywhere on your screen
 
 local Corner = Instance.new("UICorner")
 Corner.CornerRadius = UDim.new(0, 8)
 Corner.Parent = Frame
 
 local Stroke = Instance.new("UIStroke")
-Stroke.Color = Color3.fromRGB(45, 48, 65)
+Stroke.Color = Color3.fromRGB(55, 58, 75)
 Stroke.Thickness = 1.5
 Stroke.Parent = Frame
 
@@ -47,7 +50,7 @@ Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 Layout.VerticalAlignment = Enum.VerticalAlignment.Center
 Layout.Parent = Frame
 
--- Helper function to generate standardized panel buttons
+-- Button structural framework builder
 local function createButton(name: string, text: string, color: Color3): TextButton
 	local btn = Instance.new("TextButton")
 	btn.Name = name
@@ -72,9 +75,9 @@ local TeleportBtn = createButton("TeleportBtn", "⚡ TELEPORT TO MARK", Color3.f
 MarkBtn.Parent = Frame
 TeleportBtn.Parent = Frame
 Frame.Parent = ScreenGui
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.Parent = PlayerGui
 
--- 2. Direct Executor Input Connections (No RemoteEvents Needed)
+-- 2. Direct Input Operational Listeners (Bypasses Server Handshakes entirely)
 MarkBtn.MouseButton1Click:Connect(function()
 	local character = LocalPlayer.Character
 	local rootPart = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -93,7 +96,7 @@ TeleportBtn.MouseButton1Click:Connect(function()
 	local rootPart = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	
 	if rootPart and MarkedPosition then
-		-- Instantly sets your character's coordinates to the marked spot
+		-- Instantly alters CFrame coordinates relative to client-side replication rules
 		rootPart.CFrame = CFrame.new(MarkedPosition + Vector3.new(0, 0.5, 0))
 	elseif not MarkedPosition then
 		TeleportBtn.Text = "❌ NO MARK SAVED ❌"
