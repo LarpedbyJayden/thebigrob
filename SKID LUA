@@ -1,5 +1,5 @@
 --!strict
--- LARPUNIVERSAL MULTI-UTILITY EXECUTOR SUITE (ADMIN EDITION)
+-- LARPUNIVERSAL MULTI-UTILITY EXECUTOR SUITE (MOBILE FIXED)
 -- FULL SCRIPT CODE - ENSURE EVERYTHING IS COPIED
 
 local Players = game:GetService("Players")
@@ -50,15 +50,15 @@ local Window = Rayfield:CreateWindow({
 })
 
 -- --- TAB ARCHITECTURE ---
-local CombatTab = Window:CreateTab("🎯 Combat/Aimbot", nil)
-local VisualsTab = Window:CreateTab("👁️ Visuals/ESP", nil)
-local MovementTab = Window:CreateTab("👟 Movement", nil)
-local TeleportTab = Window:CreateTab("⚡ Teleport Engine", nil)
-local AdminTab = Window:CreateTab("🛠️ Nameless Tools", nil)
-local SettingsTab = Window:CreateTab("⚙️ Window Settings", nil)
+local CombatTab = Window:CreateTab("🎯 Combat/Aimbot")
+local VisualsTab = Window:CreateTab("👁️ Visuals/ESP")
+local MovementTab = Window:CreateTab("👟 Movement")
+local TeleportTab = Window:CreateTab("⚡ Teleport Engine")
+local AdminTab = Window:CreateTab("🛠️ Nameless Tools")
+local SettingsTab = Window:CreateTab("⚙️ Window Settings")
 
 -- ==========================================================
--- ⚙️ WINDOW SETTINGS (UI SIZE CONFIGURATION)
+-- ⚙️ WINDOW SETTINGS (RELIABLE SIZE OVERRIDE)
 -- ==========================================================
 SettingsTab:CreateSection("Interface Dimensions")
 
@@ -70,15 +70,17 @@ SettingsTab:CreateDropdown({
    Flag = "UiSizeDropdown",
    Callback = function(Option)
         local coreGui = game:GetService("CoreGui")
-        local mainFrame = coreGui:FindFirstChild("Rayfield") and coreGui.Rayfield:FindFirstChild("Main") :: Frame?
+        -- Explicit paths to handle Rayfield's internal layout changes dynamically
+        local rayfieldGui = coreGui:FindFirstChild("Rayfield") or LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("Rayfield")
+        local mainFrame = rayfieldGui and rayfieldGui:FindFirstChild("Main") :: Frame?
         
         if mainFrame then
             if Option == "Small (Mobile)" then
-                mainFrame.Size = UDim2.new(0, 450, 0, 280)
+                mainFrame.Size = UDim2.new(0, 440, 0, 260)
             elseif Option == "Standard" then
-                mainFrame.Size = UDim2.new(0, 500, 0, 330)
+                mainFrame.Size = UDim2.new(0, 520, 0, 320)
             elseif Option == "Big (Desktop)" then
-                mainFrame.Size = UDim2.new(0, 650, 0, 450)
+                mainFrame.Size = UDim2.new(0, 680, 0, 440)
             end
         end
    end,
@@ -129,36 +131,31 @@ AdminTab:CreateToggle({
    end,
 })
 
--- --- FLIGHT CORE SUB-ROUTINE ---
-local flyBv = Instance.new("BodyVelocity")
-local flyBg = Instance.new("BodyGyro")
-
-RunService.RenderStepped:Connect(function()
+-- --- MOBILE-COMPATIBLE FLIGHT LOOPS ---
+RunService.Heartbeat:Connect(function()
     local char = LocalPlayer.Character
     local rootPart = char and char:FindFirstChild("HumanoidRootPart") :: BasePart?
     local hum = char and char:FindFirstChild("Humanoid") :: Humanoid?
     
     if rootPart and hum and Config.FlyEnabled then
-        flyBg.Parent = rootPart
-        flyBv.Parent = rootPart
-        
-        flyBg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
-        flyBg.cframe = Camera.CFrame
-        
-        flyBv.maxForce = Vector3.new(9e9, 9e9, 9e9)
-        
-        local direction = Vector3.zero
-        if UserInputService:IsKeyDown(Enum.KeyCode.W) then direction = direction + Camera.CFrame.LookVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.S) then direction = direction - Camera.CFrame.LookVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.A) then direction = direction - Camera.CFrame.RightVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.D) then direction = direction + Camera.CFrame.RightVector end
-        
-        flyBv.velocity = direction * Config.FlySpeed
         hum.PlatformStand = true
+        
+        -- Fallback movement vectors that work cleanly on mobile touch joysticks
+        local moveDirection = hum.MoveDirection
+        if moveDirection.Magnitude == 0 then
+            rootPart.Velocity = Vector3.new(0, 0, 0)
+        else
+            rootPart.Velocity = moveDirection * Config.FlySpeed
+        end
+        
+        -- Lock character vertically when stationary to prevent falling
+        if not UserInputService.TouchEnabled then
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then rootPart.Velocity = Camera.CFrame.LookVector * Config.FlySpeed end
+        end
     else
-        flyBv.Parent = nil
-        flyBg.Parent = nil
-        if hum then hum.PlatformStand = false end
+        if hum and hum.PlatformStand then
+            hum.PlatformStand = false
+        end
     end
 end)
 
@@ -498,3 +495,4 @@ TeleportTab:CreateButton({
         end
    end,
 })
+
