@@ -1,96 +1,287 @@
 --!strict
--- EXECUTOR-COMPATIBLE LIVE TELEPORT PANEL (RAYFIELD EDITION)
--- UPDATE YOUR GITHUB FILE WITH THIS ENTIRE SCRIPT BLOCK
+-- ==========================================================
+--                  LARPUNIVERSAL MASTER SUITE
+--               By - Jstspmosybausubaru (2026)
+-- ==========================================================
 
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
--- Yield setup to ensure your local player environment is fully ready
 if not LocalPlayer then
     LocalPlayer = Players:GetPropertyChangedSignal("LocalPlayer"):Wait() or Players.LocalPlayer
 end
 
--- Active session memory coordinate storage
-local MarkedPosition: Vector3? = nil
+local Mouse = LocalPlayer:GetMouse()
+local Camera = workspace.CurrentCamera
 
--- 1. Initialize Rayfield UI Library Framework (Official Sirius Source Link)
+-- --- SYSTEM GLOBAL STATES & CONFIGURATION MATRIX ---
+local Config = {
+    -- Teleport Settings
+    MarkedPosition = nil,
+    
+    -- Aimbot Settings
+    AimbotEnabled = false,
+    AimStrength = 100,
+    AutoShoot = false,
+    MinFOV = 100,
+    
+    -- ESP Settings
+    EspEnabled = false,
+    EspBoxes = false,
+    EspTracers = false,
+    EspNames = false,
+    
+    -- Movement Settings
+    BaseSpeed = 16,
+    BaseJump = 50,
+    Noclip = false,
+    InfiniteJump = false,
+    
+    -- Nameless Admin Additions
+    FlyEnabled = false,
+    FlySpeed = 50,
+    ClickTPEnabled = false,
+    ChamsEnabled = false
+}
+
+-- --- INITIALIZE RAYFIELD FRAMEWORK ---
 local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/main/source.lua'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "Universal Teleport Panel",
+   Name = "LARPUNIVERSAL",
    Icon = 0,
-   LoadingTitle = "Loading Environment Engine...",
-   LoadingSubtitle = "by Jayden",
-   Theme = "Default", -- "Default", "Amber", "Amethyst", "Green" etc.
-   ConfigurationSaving = {
-      Enabled = false
-   },
-   Discord = {
-      Enabled = false
-   },
-   KeySystem = false -- Disabled to ensure instant execution without keys
+   LoadingTitle = "Executing LARPUNIVERSAL Matrix...",
+   LoadingSubtitle = "By - Jstspmosybausubaru",
+   Theme = "Default",
+   ConfigurationSaving = { Enabled = false },
+   Discord = { Enabled = false },
+   KeySystem = false
 })
 
--- 2. Create the System Management Tab
-local TeleportTab = Window:CreateTab("⚡ Teleport Engine", nil) -- Title, Image
+-- --- ALL TABS DEFINED ---
+local CombatTab = Window:CreateTab("🎯 Combat/Aimbot", nil)
+local VisualsTab = Window:CreateTab("👁️ Visuals/ESP", nil)
+local MovementTab = Window:CreateTab("👟 Movement", nil)
+local TeleportTab = Window:CreateTab("⚡ Teleport Engine", nil)
+local AdminTab = Window:CreateTab("🛠️ Nameless Tools", nil)
+local SettingsTab = Window:CreateTab("⚙️ Window Settings", nil)
 
--- 3. Element Interfaces: Position Management
-TeleportTab:CreateButton({
-   Name = "📍 Mark Current Location",
-   Callback = function()
-        local character = LocalPlayer.Character
-        local rootPart = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+-- ==========================================================
+-- ⚙️ WINDOW SETTINGS (UI SIZE CONFIGURATION)
+-- ==========================================================
+SettingsTab:CreateSection("Interface Dimensions")
+
+SettingsTab:CreateDropdown({
+   Name = "UI Window Display Size",
+   Options = {"Small (Mobile)", "Standard", "Big (Desktop)"},
+   CurrentOption = "Standard",
+   MultipleOptions = false,
+   Flag = "UiSizeDropdown",
+   Callback = function(Option)
+        local coreGui = game:GetService("CoreGui")
+        local mainFrame = coreGui:FindFirstChild("Rayfield") and coreGui.Rayfield:FindFirstChild("Main") :: Frame?
         
-        if rootPart then
-            MarkedPosition = rootPart.Position
-            Rayfield:Notify({
-               Title = "Position Recorded",
-               Content = string.format("Coordinates successfully mapped at: %.1f, %.1f, %.1f", MarkedPosition.X, MarkedPosition.Y, MarkedPosition.Z),
-               Duration = 3,
-               Image = nil,
-            })
-        else
-            Rayfield:Notify({
-               Title = "Mapping Error",
-               Content = "Could not locate your Character's Root Part. Stand still and retry.",
-               Duration = 3,
-               Image = nil,
-            })
+        if mainFrame then
+            if Option == "Small (Mobile)" then
+                mainFrame.Size = UDim2.new(0, 450, 0, 280)
+            elseif Option == "Standard" then
+                mainFrame.Size = UDim2.new(0, 500, 0, 330)
+            elseif Option == "Big (Desktop)" then
+                mainFrame.Size = UDim2.new(0, 650, 0, 450)
+            end
         end
    end,
 })
 
-TeleportTab:CreateButton({
-   Name = "⚡ Teleport To Marked Spot",
-   Callback = function()
-        local character = LocalPlayer.Character
-        local rootPart = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
-        
-        if rootPart and MarkedPosition then
-            -- Instantly alters CFrame coordinates relative to client-side physics replication rules
-            rootPart.CFrame = CFrame.new(MarkedPosition + Vector3.new(0, 0.5, 0))
-            
-            Rayfield:Notify({
-               Title = "Teleport Successful",
-               Content = "Snapped instantly to your active checkpoint.",
-               Duration = 2,
-               Image = nil,
-            })
-        else
-            Rayfield:Notify({
-               Title = "Execution Halted",
-               Content = "No marked location found in active memory cache! Tap Mark Location first.",
-               Duration = 4,
-               Image = nil,
-            })
-        end
+-- ==========================================================
+-- 🛠️ NAMELESS TOOLS MODULE
+-- ==========================================================
+AdminTab:CreateSection("Advanced Admin Navigation")
+
+AdminTab:CreateToggle({
+   Name = "Fly Mechanical Engine",
+   CurrentValue = false,
+   Flag = "FlyToggle",
+   Callback = function(Value)
+        Config.FlyEnabled = Value
    end,
 })
 
--- 4. Information Segment Layout
-local InfoSection = TeleportTab:CreateSection("System Analytics")
-
-TeleportTab:CreateParagraph({
-    Title = "💡 How to operate:",
-    Content = "1. Walk to your desired location.\n2. Tap 'Mark Current Location'.\n3. Walk anywhere else on the map.\n4. Tap 'Teleport To Marked Spot' to warp back instantly."
+AdminTab:CreateSlider({
+   Name = "Flight Velocity Speed",
+   Min = 10,
+   Max = 250,
+   CurrentValue = 50,
+   Flag = "FlySpeedSlider",
+   Callback = function(Value)
+        Config.FlySpeed = Value
+   end,
 })
+
+AdminTab:CreateToggle({
+   Name = "Ctrl + Click Teleport",
+   CurrentValue = false,
+   Flag = "ClickTPToggle",
+   Callback = function(Value)
+        Config.ClickTPEnabled = Value
+   end,
+})
+
+AdminTab:CreateSection("Visual Enhancements")
+
+AdminTab:CreateToggle({
+   Name = "Player Chams (See Thru Walls)",
+   CurrentValue = false,
+   Flag = "ChamsToggle",
+   Callback = function(Value)
+        Config.ChamsEnabled = Value
+   end,
+})
+
+-- --- FLIGHT CORE SUB-ROUTINE ---
+local flyBv = Instance.new("BodyVelocity")
+local flyBg = Instance.new("BodyGyro")
+
+RunService.RenderStepped:Connect(function()
+    local char = LocalPlayer.Character
+    local rootPart = char and char:FindFirstChild("HumanoidRootPart") :: BasePart?
+    local hum = char and char:FindFirstChild("Humanoid") :: Humanoid?
+    
+    if rootPart and hum and Config.FlyEnabled then
+        flyBg.Parent = rootPart
+        flyBv.Parent = rootPart
+        
+        flyBg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+        flyBg.cframe = Camera.CFrame
+        
+        flyBv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+        
+        local direction = Vector3.zero
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then direction = direction + Camera.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then direction = direction - Camera.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then direction = direction - Camera.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then direction = direction + Camera.CFrame.RightVector end
+        
+        flyBv.velocity = direction * Config.FlySpeed
+        hum.PlatformStand = true
+    else
+        flyBv.Parent = nil
+        flyBg.Parent = nil
+        if hum then hum.PlatformStand = false end
+    end
+end)
+
+-- --- CTRL + CLICK TP SUB-ROUTINE ---
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.UserInputType == Enum.UserInputType.MouseButton1 and Config.ClickTPEnabled then
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) and Mouse.Hit then
+            local char = LocalPlayer.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart") :: BasePart?
+            if root then
+                root.CFrame = CFrame.new(Mouse.Hit.Position + Vector3.new(0, 3, 0))
+            end
+        end
+    end
+end)
+
+-- --- CHAMS VISUAL ENGINE ---
+local function applyChams(player: Player)
+    local function highlightCharacter(char: Model)
+        local highlight = char:FindFirstChild("AdminCham") :: Highlight?
+        if not highlight then
+            highlight = Instance.new("Highlight")
+            highlight.Name = "AdminCham"
+            highlight.FillColor = Color3.fromRGB(239, 68, 68)
+            highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+            highlight.FillOpacity = 0.5
+            highlight.OutlineOpacity = 0.2
+            highlight.Adornee = char
+            highlight.Parent = char
+        end
+        
+        RunService.RenderStepped:Connect(function()
+            if char and char.Parent and highlight then
+                highlight.Enabled = Config.ChamsEnabled
+            elseif highlight then
+                highlight:Destroy()
+            end
+        end)
+    end
+    
+    if player.Character then highlightCharacter(player.Character) end
+    player.CharacterAdded:Connect(highlightCharacter)
+end
+
+for _, p in Players:GetPlayers() do
+    if p ~= LocalPlayer then applyChams(p) end
+end
+Players.PlayerAdded:Connect(applyChams)
+
+
+-- ==========================================================
+-- 🎯 COMBAT / AIMBOT CONFIGURATION
+-- ==========================================================
+CombatTab:CreateSection("Aimbot Core")
+
+CombatTab:CreateToggle({
+   Name = "Enable Universal Aimbot",
+   CurrentValue = false,
+   Flag = "AimbotToggle",
+   Callback = function(Value) Config.AimbotEnabled = Value end,
+})
+
+CombatTab:CreateSlider({
+   Name = "Aim Strength (Lock Smoothness)",
+   Min = 1,
+   Max = 100,
+   CurrentValue = 100,
+   Flag = "AimStrengthSlider",
+   Callback = function(Value) Config.AimStrength = Value end,
+})
+
+CombatTab:CreateSlider({
+   Name = "Field of View (FOV) Radius",
+   Min = 30,
+   Max = 500,
+   CurrentValue = 100,
+   Flag = "FOVSlider",
+   Callback = function(Value) Config.MinFOV = Value end,
+})
+
+CombatTab:CreateToggle({
+   Name = "Auto Shoot / Triggerbot",
+   CurrentValue = false,
+   Flag = "AutoShootToggle",
+   Callback = function(Value) Config.AutoShoot = Value end,
+})
+
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Thickness = 1.5
+FOVCircle.NumSides = 60
+FOVCircle.Radius = Config.MinFOV
+FOVCircle.Filled = false
+FOVCircle.Color = Color3.fromRGB(255, 75, 75)
+FOVCircle.Visible = false
+
+RunService.RenderStepped:Connect(function()
+    FOVCircle.Radius = Config.MinFOV
+    FOVCircle.Position = UserInputService:GetMouseLocation()
+    FOVCircle.Visible = Config.AimbotEnabled
+end)
+
+local function getClosestPlayerToMouse()
+    local target = nil
+    local maxDist = Config.MinFOV
+    local mousePos = UserInputService:GetMouseLocation()
+
+    for _, player in Players:GetPlayers() do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
+            local screenPos, onScreen = Camera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position)
+            if onScreen then
+                local dist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
+                if dist < maxDist then
+                    maxDist = dist
+                    target = player
+                end
