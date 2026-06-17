@@ -1,107 +1,96 @@
 --!strict
--- EXECUTOR-COMPATIBLE LIVE TELEPORT PANEL
+-- EXECUTOR-COMPATIBLE LIVE TELEPORT PANEL (RAYFIELD EDITION)
 -- UPDATE YOUR GITHUB FILE WITH THIS ENTIRE SCRIPT BLOCK
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- Yield setup to ensure your local player data is completely ready
+-- Yield setup to ensure your local player environment is fully ready
 if not LocalPlayer then
     LocalPlayer = Players:GetPropertyChangedSignal("LocalPlayer"):Wait() or Players.LocalPlayer
 end
 
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui", 10) :: PlayerGui
-if not PlayerGui then return end
-
 -- Active session memory coordinate storage
 local MarkedPosition: Vector3? = nil
 
--- Clean up residual interface layers from previous execution runs
-local oldUi = PlayerGui:FindFirstChild("ExecutorTeleportPanel")
-if oldUi then oldUi:Destroy() end
+-- 1. Initialize Rayfield UI Library Framework (Official Sirius Source Link)
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/main/source.lua'))()
 
--- 1. Programmatic Visual Dashboard Construction
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ExecutorTeleportPanel"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+local Window = Rayfield:CreateWindow({
+   Name = "Universal Teleport Panel",
+   Icon = 0,
+   LoadingTitle = "Loading Environment Engine...",
+   LoadingSubtitle = "by Jayden",
+   Theme = "Default", -- "Default", "Amber", "Amethyst", "Green" etc.
+   ConfigurationSaving = {
+      Enabled = false
+   },
+   Discord = {
+      Enabled = false
+   },
+   KeySystem = false -- Disabled to ensure instant execution without keys
+})
 
-local Frame = Instance.new("Frame")
-Frame.Name = "MainFrame"
-Frame.Size = UDim2.new(0, 220, 0, 110)
-Frame.Position = UDim2.new(0.05, 0, 0.35, 0) -- Positioned cleanly for mobile/desktop overlays
-Frame.BackgroundColor3 = Color3.fromRGB(20, 21, 28)
-Frame.BorderSizePixel = 0
-Frame.Active = true
-Frame.Draggable = true -- Hold and slide anywhere on your screen
+-- 2. Create the System Management Tab
+local TeleportTab = Window:CreateTab("⚡ Teleport Engine", nil) -- Title, Image
 
-local Corner = Instance.new("UICorner")
-Corner.CornerRadius = UDim.new(0, 8)
-Corner.Parent = Frame
+-- 3. Element Interfaces: Position Management
+TeleportTab:CreateButton({
+   Name = "📍 Mark Current Location",
+   Callback = function()
+        local character = LocalPlayer.Character
+        local rootPart = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+        
+        if rootPart then
+            MarkedPosition = rootPart.Position
+            Rayfield:Notify({
+               Title = "Position Recorded",
+               Content = string.format("Coordinates successfully mapped at: %.1f, %.1f, %.1f", MarkedPosition.X, MarkedPosition.Y, MarkedPosition.Z),
+               Duration = 3,
+               Image = nil,
+            })
+        else
+            Rayfield:Notify({
+               Title = "Mapping Error",
+               Content = "Could not locate your Character's Root Part. Stand still and retry.",
+               Duration = 3,
+               Image = nil,
+            })
+        end
+   end,
+})
 
-local Stroke = Instance.new("UIStroke")
-Stroke.Color = Color3.fromRGB(55, 58, 75)
-Stroke.Thickness = 1.5
-Stroke.Parent = Frame
+TeleportTab:CreateButton({
+   Name = "⚡ Teleport To Marked Spot",
+   Callback = function()
+        local character = LocalPlayer.Character
+        local rootPart = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+        
+        if rootPart and MarkedPosition then
+            -- Instantly alters CFrame coordinates relative to client-side physics replication rules
+            rootPart.CFrame = CFrame.new(MarkedPosition + Vector3.new(0, 0.5, 0))
+            
+            Rayfield:Notify({
+               Title = "Teleport Successful",
+               Content = "Snapped instantly to your active checkpoint.",
+               Duration = 2,
+               Image = nil,
+            })
+        else
+            Rayfield:Notify({
+               Title = "Execution Halted",
+               Content = "No marked location found in active memory cache! Tap Mark Location first.",
+               Duration = 4,
+               Image = nil,
+            })
+        end
+   end,
+})
 
-local Layout = Instance.new("UIListLayout")
-Layout.Padding = UDim.new(0, 8)
-Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-Layout.VerticalAlignment = Enum.VerticalAlignment.Center
-Layout.Parent = Frame
+-- 4. Information Segment Layout
+local InfoSection = TeleportTab:CreateSection("System Analytics")
 
--- Button structural framework builder
-local function createButton(name: string, text: string, color: Color3): TextButton
-	local btn = Instance.new("TextButton")
-	btn.Name = name
-	btn.Size = UDim2.new(0, 190, 0, 36)
-	btn.BackgroundColor3 = color
-	btn.Text = text
-	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	btn.Font = Enum.Font.GothamBold
-	btn.TextSize = 13
-	btn.BorderSizePixel = 0
-	btn.AutoButtonColor = true
-	
-	local bCorner = Instance.new("UICorner")
-	bCorner.CornerRadius = UDim.new(0, 6)
-	bCorner.Parent = btn
-	return btn
-end
-
-local MarkBtn = createButton("MarkBtn", "📍 MARK CURRENT SPOT", Color3.fromRGB(43, 108, 176))
-local TeleportBtn = createButton("TeleportBtn", "⚡ TELEPORT TO MARK", Color3.fromRGB(39, 121, 88))
-
-MarkBtn.Parent = Frame
-TeleportBtn.Parent = Frame
-Frame.Parent = ScreenGui
-ScreenGui.Parent = PlayerGui
-
--- 2. Direct Input Operational Listeners (Bypasses Server Handshakes entirely)
-MarkBtn.MouseButton1Click:Connect(function()
-	local character = LocalPlayer.Character
-	local rootPart = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
-	
-	if rootPart then
-		MarkedPosition = rootPart.Position
-		MarkBtn.Text = "✨ MARK RECORDED ✨"
-		task.delay(1, function() 
-			MarkBtn.Text = "📍 MARK CURRENT SPOT" 
-		end)
-	end
-end)
-
-TeleportBtn.MouseButton1Click:Connect(function()
-	local character = LocalPlayer.Character
-	local rootPart = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
-	
-	if rootPart and MarkedPosition then
-		-- Instantly alters CFrame coordinates relative to client-side replication rules
-		rootPart.CFrame = CFrame.new(MarkedPosition + Vector3.new(0, 0.5, 0))
-	elseif not MarkedPosition then
-		TeleportBtn.Text = "❌ NO MARK SAVED ❌"
-		task.delay(1.5, function() 
-			TeleportBtn.Text = "⚡ TELEPORT TO MARK" 
-		end)
-	end
-end)
+TeleportTab:CreateParagraph({
+    Title = "💡 How to operate:",
+    Content = "1. Walk to your desired location.\n2. Tap 'Mark Current Location'.\n3. Walk anywhere else on the map.\n4. Tap 'Teleport To Marked Spot' to warp back instantly."
+})
